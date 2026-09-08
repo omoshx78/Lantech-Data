@@ -1,9 +1,3 @@
-databases:
-  - name: lantechdata-db
-    plan: free
-    databaseName: lantechdata
-    user: lantechdata
-
 services:
   - type: web
     name: lantechdata-server
@@ -15,10 +9,12 @@ services:
     envVars:
       - key: PORT
         value: 4000
+      # Paste your Supabase connection string here (or leave blank and set it
+      # in the Render dashboard after deploying instead) — Project Settings >
+      # Database > Connection string > Connection pooling (Session mode) in
+      # Supabase.
       - key: DATABASE_URL
-        fromDatabase:
-          name: lantechdata-db
-          property: connectionString
+        sync: false
       - key: CLIENT_URL
         sync: false
       - key: PUBLIC_SERVER_URL

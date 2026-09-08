@@ -67,22 +67,34 @@ STK push needs a **public HTTPS callback URL** — Safaricom calls
 `PUBLIC_SERVER_URL/api/mpesa/callback` with the result. For local testing,
 tunnel with `ngrok http 4000` and set `PUBLIC_SERVER_URL` to the ngrok URL.
 
-## 3. Deploy to Render (backend + database)
+## 3. Deploy to Render (backend) + Supabase (database)
 
+`render.yaml` provisions the web service only — it does **not** create a
+Render Postgres database, so it won't hit Render's one-free-database-per-account
+limit. Use a free external Postgres instead (Supabase or Neon both work fine;
+these instructions use Supabase):
+
+- Create a free project at **supabase.com** → grab the connection string from
+  **Project Settings → Database → Connection string → Connection pooling
+  (Session mode)**.
 - Push this repo to GitHub, then in Render: **New → Blueprint**, point it at
-  the repo. `render.yaml` provisions both the free Postgres database
-  (`lantechdata-db`) and the web service, and wires `DATABASE_URL` between
-  them automatically.
+  the repo.
+- In the Render dashboard, set `DATABASE_URL` to the Supabase connection
+  string you copied (left blank in `render.yaml` on purpose).
 - After the first deploy, run the migration once against the live database —
   easiest way is Render's **Shell** tab on the web service:
   ```bash
   npm run migrate
   ```
-- Set the remaining env vars in the Render dashboard (left blank in
-  `render.yaml` on purpose so secrets aren't committed):
+- Set the remaining env vars in the Render dashboard (also left blank in
+  `render.yaml` so secrets aren't committed):
   `CLIENT_URL` (your Vercel URL), `PUBLIC_SERVER_URL` (this service's own
   Render URL), `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, and optionally
   `CONTACT_TO_EMAIL` + `SMTP_*` for emailed enquiries.
+
+Prefer Render's own managed Postgres instead? Add a `databases:` block back to
+`render.yaml` (see Render's Blueprint docs) — the server code already handles
+either via the same `DATABASE_URL` variable, no code changes needed.
 
 ## 4. Deploy to Vercel (frontend)
 
