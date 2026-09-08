@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Users, GraduationCap, Award, ShieldCheck, Star, Loader2 } from 'lucide-react'
+import { Users, GraduationCap, Award, ShieldCheck, Star, Loader2, ArrowRight } from 'lucide-react'
 import { useProducts } from '../context/ProductsContext'
 import { fmt } from '../lib/format'
 import ContactForm from '../components/ContactForm'
