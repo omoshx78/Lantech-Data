@@ -1,10 +1,10 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
-import { initDb } from './lib/db.js'
-import contactRouter from './routes/contact.js'
+import productsRouter from './routes/products.js'
 import ordersRouter from './routes/orders.js'
 import mpesaRouter from './routes/mpesa.js'
+import contactRouter from './routes/contact.js'
 
 const app = express()
 
@@ -18,9 +18,10 @@ app.use(express.json())
 app.get('/', (_req, res) => res.json({ ok: true, service: 'lantechdata-server' }))
 app.get('/api/health', (_req, res) => res.json({ ok: true }))
 
-app.use('/api/contact', contactRouter)
+app.use('/api/products', productsRouter)
 app.use('/api/orders', ordersRouter)
 app.use('/api/mpesa', mpesaRouter)
+app.use('/api/contact', contactRouter)
 
 app.use((err, _req, res, _next) => {
   console.error(err)
@@ -28,7 +29,4 @@ app.use((err, _req, res, _next) => {
 })
 
 const PORT = process.env.PORT || 4000
-
-initDb().then(() => {
-  app.listen(PORT, () => console.log(`LanTech server listening on :${PORT}`))
-})
+app.listen(PORT, () => console.log(`LanTech server listening on :${PORT}`))

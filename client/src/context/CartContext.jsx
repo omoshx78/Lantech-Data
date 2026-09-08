@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { findService } from '../data/services'
+import { useProducts } from './ProductsContext'
 
 const CartContext = createContext(null)
-const STORAGE_KEY = 'lantech-cart-v1'
+const STORAGE_KEY = 'lantech-cart-v2'
 
 export function CartProvider({ children }) {
+  const { findProduct } = useProducts()
   const [items, setItems] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -18,34 +19,28 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
   }, [items])
 
-  const addItem = (serviceId, qty = 1) => {
+  const addItem = (productId, qty = 1) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.serviceId === serviceId)
-      if (existing) {
-        return prev.map((i) => (i.serviceId === serviceId ? { ...i, qty: i.qty + qty } : i))
-      }
-      return [...prev, { serviceId, qty }]
+      const existing = prev.find((i) => i.productId === productId)
+      if (existing) return prev.map((i) => (i.productId === productId ? { ...i, qty: i.qty + qty } : i))
+      return [...prev, { productId, qty }]
     })
   }
 
-  const removeItem = (serviceId) => setItems((prev) => prev.filter((i) => i.serviceId !== serviceId))
-
-  const updateQty = (serviceId, qty) =>
-    setItems((prev) => prev.map((i) => (i.serviceId === serviceId ? { ...i, qty: Math.max(1, qty) } : i)))
-
+  const removeItem = (productId) => setItems((prev) => prev.filter((i) => i.productId !== productId))
+  const updateQty = (productId, qty) =>
+    setItems((prev) => prev.map((i) => (i.productId === productId ? { ...i, qty: Math.max(1, qty) } : i)))
   const clear = () => setItems([])
 
   const detailedItems = items
-    .map((i) => ({ ...i, service: findService(i.serviceId) }))
-    .filter((i) => i.service)
+    .map((i) => ({ ...i, product: findProduct(i.productId) }))
+    .filter((i) => i.product)
 
-  const total = detailedItems.reduce((sum, i) => sum + i.service.price * i.qty, 0)
+  const total = detailedItems.reduce((sum, i) => sum + i.product.price * i.qty, 0)
   const count = items.reduce((sum, i) => sum + i.qty, 0)
 
   return (
-    <CartContext.Provider
-      value={{ items: detailedItems, addItem, removeItem, updateQty, clear, total, count }}
-    >
+    <CartContext.Provider value={{ items: detailedItems, addItem, removeItem, updateQty, clear, total, count }}>
       {children}
     </CartContext.Provider>
   )

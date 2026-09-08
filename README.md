@@ -1,56 +1,56 @@
-# LanTech Data Services — website revamp
+# LanTech Data Services — e-commerce rebuild
 
-A clean, modern redesign of lantechdata.co.ke, rebuilt as a React (Vite) frontend
-with a Node/Express backend, service-package shop, working contact form, and
-M-Pesa (Safaricom Daraja) checkout on **sandbox** credentials.
+A real e-commerce stack for the Virtual TVET course shop: React (Vite) frontend,
+Node/Express + **PostgreSQL** backend, and M-Pesa (Safaricom Daraja) checkout on
+**sandbox** credentials — deployable to Vercel (frontend) + Render (backend + DB).
 
 ```
-lantechdata-app/
-├── client/     React + Vite + Tailwind frontend  → deploy to Vercel
-├── server/     Node + Express API + M-Pesa        → deploy to Render
-└── render.yaml Render deploy blueprint
+lantech-ecommerce/
+├── client/     React + Vite + Tailwind frontend     → deploy to Vercel
+├── server/     Node + Express + Postgres + M-Pesa    → deploy to Render
+└── render.yaml Render blueprint (web service + Postgres database)
 ```
 
 ## What's real vs. what needs your input
 
-- **Design & copy**: rebuilt from the live site's actual content (hero slides,
-  services, founder message, partners, etc.) — no lorem ipsum.
-- **Shop catalog**: the WooCommerce SQL export had no real products in it
-  (only WooCommerce's default demo "headphones" listing). The real catalog —
-  6 Virtual TVET (ODeL) course subscriptions (Automotive & HVAC, in 3/6/12
-  month single-user tiers) — was pulled from the live shop at
-  lantechdata.co.ke/shop instead, matching the real names, prices (VAT
-  inclusive), and course lists exactly. Edit `client/src/data/services.js`
-  **and** `server/src/data/services.js` (kept in sync manually, server is the
-  pricing source of truth) if prices change or you add new courses.
-- **Product images**: each course has an `image` field pointing to
-  `client/public/images/products/`. No real photos are bundled (the ones on
-  the live site are licensed Freepik stock — can't be copied into this repo).
-  Drop your own licensed photos in at the filenames listed in
-  `client/public/images/products/README.md` (currently `automotive.jpg` and
-  `hvac.jpg`, shared across each course's duration tiers) and they appear
-  automatically — no code change needed. Until then, the site shows a clean
-  placeholder box instead of a broken image.
-- **M-Pesa**: fully wired to Safaricom's Daraja **sandbox**. You must create
-  your own free sandbox app to get a Consumer Key/Secret (see below) —
-  nobody can generate that for you.
-- **Contact form**: saves every submission to the server's database and will
-  also email you if you set SMTP credentials (optional).
+- **Design**: clean, institutional look (white background, blue primary, card
+  grid) — a deliberate rebuild from the earlier, more editorial-styled version.
+  A live interactive preview of this design was shared separately as an
+  artifact (mock data, no backend) so you could review it before this full
+  build.
+- **Catalog**: 6 real Virtual TVET course subscriptions (Automotive & HVAC,
+  3/6/12 month tiers), pulled from the live shop at lantechdata.co.ke/shop —
+  names, prices (VAT inclusive), and course lists match exactly. The catalog
+  lives in `server/src/db/catalog.js` and is seeded into Postgres by the
+  migration script — edit that file and re-run `npm run migrate` to change it.
+- **Database**: real PostgreSQL, not a flat file. `products`, `orders`,
+  `order_items`, `contacts` tables — see `server/src/db/schema.sql`. Orders are
+  now safe from being wiped on redeploy (the earlier JSON-file version wasn't).
+- **M-Pesa**: wired to Safaricom's Daraja **sandbox**. You need your own free
+  sandbox app for the Consumer Key/Secret (see below) — nobody else can
+  generate that for you.
+- **Product photos**: no real photos are bundled (the ones on the live site
+  are licensed stock). Drop files into `client/public/images/products/` per
+  that folder's README — `automotive.jpg` and `hvac.jpg` cover all 6 tiers.
 
 ## 1. Local development
+
+You need a local Postgres running (or use a free hosted one, e.g. a Render
+Postgres instance, for local dev too — either works).
 
 ```bash
 # Backend
 cd server
-cp .env.example .env   # fill in MPESA_CONSUMER_KEY/SECRET at minimum
+cp .env.example .env       # fill in DATABASE_URL and MPESA_CONSUMER_KEY/SECRET
 npm install
-npm run dev             # http://localhost:4000
+npm run migrate             # creates tables + seeds the 6 courses
+npm run dev                 # http://localhost:4000
 
 # Frontend (new terminal)
 cd client
-cp .env.example .env    # VITE_API_URL=http://localhost:4000
+cp .env.example .env        # VITE_API_URL=http://localhost:4000
 npm install
-npm run dev              # http://localhost:5173
+npm run dev                  # http://localhost:5173
 ```
 
 ## 2. Get Safaricom Daraja sandbox credentials
@@ -58,63 +58,40 @@ npm run dev              # http://localhost:5173
 1. Sign up at https://developer.safaricom.co.ke
 2. **My Apps → Add a new App**, enable the **Lipa Na M-Pesa Sandbox** product.
 3. Copy the **Consumer Key** and **Consumer Secret** into `server/.env`.
-4. Leave `MPESA_SHORTCODE` and `MPESA_PASSKEY` as the defaults in
-   `.env.example` — those are Safaricom's shared sandbox values, the same for
-   every developer.
-5. To actually test a payment, use Safaricom's official sandbox test phone
-   number: **254708374149** (any PIN is accepted in sandbox). The checkout
-   page already shows this hint.
+4. Leave `MPESA_SHORTCODE` / `MPESA_PASSKEY` as the defaults — Safaricom's
+   shared sandbox values, same for every developer.
+5. Test payments with Safaricom's official sandbox number **254708374149**
+   (any PIN is accepted in sandbox).
 
-STK push **requires a public HTTPS callback URL** — Safaricom calls
-`PUBLIC_SERVER_URL/api/mpesa/callback` with the result. This won't work on
-`localhost`; for local testing, tunnel your server with something like
-`ngrok http 4000` and set `PUBLIC_SERVER_URL` to the ngrok HTTPS URL. In
-production this is just your Render URL.
+STK push needs a **public HTTPS callback URL** — Safaricom calls
+`PUBLIC_SERVER_URL/api/mpesa/callback` with the result. For local testing,
+tunnel with `ngrok http 4000` and set `PUBLIC_SERVER_URL` to the ngrok URL.
 
-## 3. Deploy the backend to Render
+## 3. Deploy to Render (backend + database)
 
 - Push this repo to GitHub, then in Render: **New → Blueprint**, point it at
-  the repo — `render.yaml` configures the `server` service automatically.
-  (Or: New → Web Service, root directory `server`, build `npm install`, start
-  `npm start`.)
-- After the first deploy, set these env vars in the Render dashboard
-  (`render.yaml` leaves them blank on purpose so secrets aren't committed):
-  - `CLIENT_URL` — your Vercel URL, e.g. `https://lantechdata.vercel.app`
-  - `PUBLIC_SERVER_URL` — this Render service's own URL, e.g.
-    `https://lantechdata-server.onrender.com` (no trailing slash)
-  - `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`
-  - `CONTACT_TO_EMAIL` and the `SMTP_*` vars if you want emailed enquiries
-- Render's free tier uses a small JSON file as the order/contact database
-  (`server/src/lib/db.js`) — it's fine for launch/demo traffic. For real
-  volume, swap that module for Render's managed Postgres; every other file
-  only calls `db.data.orders` / `db.data.contacts`, so the change is
-  localized to that one file.
+  the repo. `render.yaml` provisions both the free Postgres database
+  (`lantechdata-db`) and the web service, and wires `DATABASE_URL` between
+  them automatically.
+- After the first deploy, run the migration once against the live database —
+  easiest way is Render's **Shell** tab on the web service:
+  ```bash
+  npm run migrate
+  ```
+- Set the remaining env vars in the Render dashboard (left blank in
+  `render.yaml` on purpose so secrets aren't committed):
+  `CLIENT_URL` (your Vercel URL), `PUBLIC_SERVER_URL` (this service's own
+  Render URL), `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, and optionally
+  `CONTACT_TO_EMAIL` + `SMTP_*` for emailed enquiries.
 
-## 4. Deploy the frontend to Vercel
+## 4. Deploy to Vercel (frontend)
 
-- **New Project** → import the repo → set **Root Directory** to `client`.
-- Framework preset: Vite (auto-detected).
+- **New Project** → import the repo → **Root Directory**: `client`.
 - Add environment variable `VITE_API_URL` = your Render backend URL.
-- `client/vercel.json` already handles SPA routing (React Router refreshes).
+- `client/vercel.json` handles SPA routing.
 
 ## 5. Going live for real (production M-Pesa)
 
-When you're ready to take real payments:
-
-1. Apply for a **production** Lipa Na M-Pesa shortcode / paybill with
-   Safaricom (this is a business process with Safaricom, separate from the
-   developer sandbox).
-2. Set `MPESA_BASE_URL=https://api.safaricom.co.ke`, and replace
-   `MPESA_SHORTCODE` / `MPESA_PASSKEY` / consumer key & secret with your
-   production values.
-3. Nothing else in the code changes — sandbox and production use the same
-   API shape.
-
-## Notes on the data left out of this build
-
-Your uploaded SQL dump and wp-admin export are from the WordPress/WooCommerce
-site and weren't used directly — this is a fresh React/Node stack per your
-brief, not a WordPress migration. If you'd like specific text, images, blog
-posts, or real product data pulled out of that WordPress export and placed
-into the new site, share the specifics (or the media/uploads folder) and I
-can wire it in.
+Apply for a production Lipa Na M-Pesa shortcode with Safaricom (a separate
+business process), then set `MPESA_BASE_URL=https://api.safaricom.co.ke` and
+swap in your production shortcode/passkey/credentials. Nothing else changes.

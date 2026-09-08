@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Smartphone, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Smartphone, Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react'
 import { useCart } from '../context/CartContext'
-import { formatKES } from '../data/services'
+import { fmt } from '../lib/format'
 import { api } from '../lib/api'
 
 const PHONE_RE = /^(?:254|0)7\d{8}$|^(?:254|0)1\d{8}$/
@@ -19,7 +19,7 @@ export default function Checkout() {
   const { items, total, clear } = useCart()
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', email: '', organisation: '', phone: '' })
-  const [stage, setStage] = useState('form') // form | creating | pending | success | failed
+  const [stage, setStage] = useState('form')
   const [error, setError] = useState('')
   const pollRef = useRef(null)
 
@@ -45,14 +45,13 @@ export default function Checkout() {
           setError(data.resultDesc || 'The M-Pesa payment was not completed.')
         }
       } catch {
-        // keep polling; transient network errors shouldn't kill the flow
+        // transient network errors shouldn't kill the flow
       }
     }, 3000)
-    // stop polling after 2 minutes
     setTimeout(() => {
       clearInterval(pollRef.current)
       setStage((s) => (s === 'pending' ? 'failed' : s))
-      setError((e) => e || 'Timed out waiting for confirmation. If you approved the prompt, your booking may still go through — we will email you.')
+      setError((e) => e || 'Timed out waiting for confirmation. If you approved the prompt, your booking may still go through.')
     }, 120000)
   }
 
@@ -70,7 +69,7 @@ export default function Checkout() {
       const phone = normalizePhone(form.phone)
       const { data: order } = await api.post('/api/orders', {
         customer: { name: form.name, email: form.email, organisation: form.organisation, phone },
-        items: items.map((i) => ({ serviceId: i.serviceId, qty: i.qty })),
+        items: items.map((i) => ({ productId: i.productId, qty: i.qty })),
       })
 
       setStage('pending')
@@ -82,15 +81,18 @@ export default function Checkout() {
     }
   }
 
+  const inputClass =
+    'mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C7C8EC] focus:border-[#3E4095] disabled:bg-slate-50'
+
   if (stage === 'success') {
     return (
-      <div className="mx-auto max-w-xl px-5 py-24 text-center">
-        <CheckCircle2 size={44} style={{ color: 'var(--confirm)' }} className="mx-auto" />
-        <h1 className="font-display text-3xl font-semibold mt-6">Payment received</h1>
-        <p className="text-[var(--ink-soft)] mt-3">
-          Your payment has been confirmed via M-Pesa. Access details will be sent to your email shortly.
-        </p>
-        <button onClick={() => navigate('/')} className="mt-8 rounded-full px-6 py-3 text-sm font-medium text-white" style={{ background: 'var(--ink)' }}>
+      <div className="max-w-md mx-auto px-5 py-24 text-center">
+        <div className="h-16 w-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto">
+          <CheckCircle2 size={32} className="text-emerald-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 mt-6">Payment received</h1>
+        <p className="text-slate-500 mt-2">Your payment has been confirmed via M-Pesa. Access details will be sent to your email shortly.</p>
+        <button onClick={() => navigate('/')} className="mt-8 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 transition-colors">
           Back to home
         </button>
       </div>
@@ -98,83 +100,82 @@ export default function Checkout() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-16">
-      <h1 className="font-display text-4xl font-semibold">Checkout</h1>
+    <div className="max-w-6xl mx-auto px-5 py-14">
+      <button onClick={() => navigate('/cart')} className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 mb-6">
+        <ArrowLeft size={15} /> Back to cart
+      </button>
+      <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Checkout</h1>
 
-      <div className="grid md:grid-cols-[1.3fr_1fr] gap-12 mt-10">
+      <div className="grid md:grid-cols-[1.3fr_1fr] gap-10 mt-8">
         <form onSubmit={onSubmit} className="grid gap-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-mono text-[var(--slate)]">FULL NAME</label>
-              <input required name="name" value={form.name} onChange={onChange} disabled={stage !== 'form'}
-                className="mt-1 w-full rounded-lg border px-3 py-2.5 bg-transparent" style={{ borderColor: 'var(--slate-line)' }} />
+              <label className="text-xs font-bold text-slate-400 tracking-wide">FULL NAME</label>
+              <input required name="name" value={form.name} onChange={onChange} disabled={stage !== 'form'} className={inputClass} />
             </div>
             <div>
-              <label className="text-xs font-mono text-[var(--slate)]">ORGANISATION</label>
-              <input name="organisation" value={form.organisation} onChange={onChange} disabled={stage !== 'form'}
-                className="mt-1 w-full rounded-lg border px-3 py-2.5 bg-transparent" style={{ borderColor: 'var(--slate-line)' }} />
+              <label className="text-xs font-bold text-slate-400 tracking-wide">ORGANISATION</label>
+              <input name="organisation" value={form.organisation} onChange={onChange} disabled={stage !== 'form'} className={inputClass} />
             </div>
           </div>
           <div>
-            <label className="text-xs font-mono text-[var(--slate)]">EMAIL</label>
-            <input required type="email" name="email" value={form.email} onChange={onChange} disabled={stage !== 'form'}
-              className="mt-1 w-full rounded-lg border px-3 py-2.5 bg-transparent" style={{ borderColor: 'var(--slate-line)' }} />
+            <label className="text-xs font-bold text-slate-400 tracking-wide">EMAIL</label>
+            <input required type="email" name="email" value={form.email} onChange={onChange} disabled={stage !== 'form'} className={inputClass} />
           </div>
           <div>
-            <label className="text-xs font-mono text-[var(--slate)]">M-PESA NUMBER</label>
-            <input required name="phone" value={form.phone} onChange={onChange} placeholder="07XX XXX XXX" disabled={stage !== 'form'}
-              className="mt-1 w-full rounded-lg border px-3 py-2.5 bg-transparent" style={{ borderColor: 'var(--slate-line)' }} />
-            <p className="text-xs text-[var(--slate)] mt-1">Sandbox mode — use Safaricom test number 254708374149.</p>
+            <label className="text-xs font-bold text-slate-400 tracking-wide">M-PESA NUMBER</label>
+            <input required name="phone" value={form.phone} onChange={onChange} placeholder="07XX XXX XXX" disabled={stage !== 'form'} className={inputClass} />
+            <p className="text-xs text-slate-400 mt-1.5">Sandbox mode — use Safaricom test number 254708374149.</p>
           </div>
 
           {stage === 'form' && (
-            <button type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-white w-fit" style={{ background: 'var(--ink)' }}>
+            <button type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[#3E4095] hover:bg-[#33356E] text-white font-semibold px-6 py-3.5 w-fit transition-colors">
               <Smartphone size={16} /> Pay with M-Pesa
             </button>
           )}
 
           {(stage === 'creating' || stage === 'pending') && (
-            <div className="flex items-center gap-3 rounded-xl border p-4 mt-2" style={{ borderColor: 'var(--slate-line)', background: 'var(--paper-dim)' }}>
-              <Loader2 size={18} className="animate-spin" style={{ color: 'var(--signal)' }} />
+            <div className="flex items-center gap-3 rounded-xl border border-[#DADAF0] bg-[#EEEEF9] p-4 mt-2">
+              <Loader2 size={18} className="animate-spin text-[#3E4095]" />
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-semibold text-slate-900">
                   {stage === 'creating' ? 'Setting up your order…' : 'Check your phone for the M-Pesa prompt'}
                 </p>
-                {stage === 'pending' && <p className="text-xs text-[var(--slate)] mt-0.5">Enter your M-Pesa PIN to confirm payment.</p>}
+                {stage === 'pending' && <p className="text-xs text-slate-500 mt-0.5">Enter your M-Pesa PIN to confirm payment.</p>}
               </div>
             </div>
           )}
 
           {stage === 'failed' && (
-            <div className="flex items-start gap-3 rounded-xl border p-4 mt-2" style={{ borderColor: '#F0C9C4', background: '#FBEEEC' }}>
-              <XCircle size={18} style={{ color: '#B3261E' }} className="shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4 mt-2">
+              <XCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Payment not completed</p>
-                <p className="text-xs text-[var(--ink-soft)] mt-1">{error}</p>
-                <button type="button" onClick={() => { setStage('form'); setError('') }} className="text-sm underline mt-2">
+                <p className="text-sm font-semibold text-slate-900">Payment not completed</p>
+                <p className="text-xs text-slate-500 mt-1">{error}</p>
+                <button type="button" onClick={() => { setStage('form'); setError('') }} className="text-sm font-semibold text-[#3E4095] mt-2">
                   Try again
                 </button>
               </div>
             </div>
           )}
 
-          {error && stage === 'form' && <p className="text-sm" style={{ color: '#B3261E' }}>{error}</p>}
+          {error && stage === 'form' && <p className="text-sm text-red-600">{error}</p>}
         </form>
 
-        <div className="rounded-2xl border p-6 h-fit" style={{ borderColor: 'var(--slate-line)' }}>
-          <h3 className="font-display text-lg font-semibold">Order summary</h3>
-          <div className="mt-4 space-y-2 text-sm">
+        <div className="rounded-2xl border border-slate-200 p-6 h-fit bg-slate-50/50">
+          <h3 className="font-bold text-slate-900">Order summary</h3>
+          <div className="mt-4 space-y-2.5">
             {items.map((i) => (
-              <div key={i.serviceId} className="flex justify-between">
-                <span className="text-[var(--ink-soft)]">{i.service.name} × {i.qty}</span>
-                <span className="font-mono">{formatKES(i.service.price * i.qty)}</span>
+              <div key={i.productId} className="flex justify-between text-sm">
+                <span className="text-slate-600">{i.product.name} × {i.qty}</span>
+                <span className="font-semibold text-slate-900">{fmt(i.product.price * i.qty)}</span>
               </div>
             ))}
           </div>
-          <div className="border-t my-4" style={{ borderColor: 'var(--slate-line)' }} />
-          <div className="flex justify-between font-medium">
-            <span>Total due now</span>
-            <span className="font-mono">{formatKES(total)}</span>
+          <div className="border-t border-slate-200 my-4" />
+          <div className="flex justify-between font-bold text-slate-900">
+            <span>Total due</span>
+            <span>{fmt(total)}</span>
           </div>
         </div>
       </div>

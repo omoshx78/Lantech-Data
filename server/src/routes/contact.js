@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { nanoid } from 'nanoid'
 import nodemailer from 'nodemailer'
-import { db } from '../lib/db.js'
+import { query } from '../db/pool.js'
 
 const router = Router()
 
@@ -21,9 +21,10 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'name, email and message are required' })
   }
 
-  const entry = { id: nanoid(), name, email, phone: phone || '', message, createdAt: new Date().toISOString() }
-  db.data.contacts.push(entry)
-  await db.write()
+  const id = nanoid()
+  await query('INSERT INTO contacts (id, name, email, phone, message) VALUES ($1, $2, $3, $4, $5)', [
+    id, name, email, phone || '', message,
+  ])
 
   if (transporter && process.env.CONTACT_TO_EMAIL) {
     try {
@@ -35,8 +36,6 @@ router.post('/', async (req, res) => {
         text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone || 'n/a'}\n\n${message}`,
       })
     } catch (err) {
-      // Don't fail the request just because email delivery failed — the enquiry
-      // is already saved and can be viewed/exported from the database.
       console.error('contact email delivery failed:', err.message)
     }
   }
