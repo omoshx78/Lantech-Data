@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowLeft, ChevronRight, ShieldCheck, Wrench, GraduationCap, Building2, Sparkles, Glasses } from 'lucide-react'
+import { useRipple, RippleLayer } from './useRipple'
 
 // Real hero content from https://lantechdata.co.ke/ — themes and copy kept as-is.
 const slides = [
@@ -90,23 +91,30 @@ function SlideImage({ src, Icon, active }) {
 export default function HeroSlider() {
   const [index, setIndex] = useState(0)
   const timer = useRef(null)
+  const { ripples, onRippleClick } = useRipple()
 
-  useEffect(() => {
+  const startAutoplay = () => {
+    clearInterval(timer.current)
     timer.current = setInterval(() => {
       setIndex((i) => (i + 1) % slides.length)
     }, 6000)
+  }
+
+  useEffect(() => {
+    startAutoplay()
     return () => clearInterval(timer.current)
   }, [])
 
   const go = (i) => {
-    clearInterval(timer.current)
     setIndex((i + slides.length) % slides.length)
+    startAutoplay() // restart the 6s countdown fresh after manual navigation too
   }
 
   return (
     <section
       className="relative h-[600px] md:h-[680px] overflow-hidden bg-slate-900"
       onMouseEnter={() => clearInterval(timer.current)}
+      onMouseLeave={startAutoplay}
     >
       {slides.map((slide, i) => (
         <div
@@ -166,10 +174,12 @@ export default function HeroSlider() {
             >
               <Link
                 to={slide.cta.to}
-                className="inline-flex items-center gap-2 rounded-full text-white font-semibold px-6 py-3 shadow-lg transition-transform hover:-translate-y-0.5"
+                onClick={onRippleClick}
+                className="relative overflow-hidden inline-flex items-center gap-2 rounded-full text-white font-semibold px-6 py-3 shadow-lg transition-transform hover:-translate-y-0.5"
                 style={{ background: 'linear-gradient(135deg, #F58634, #d8762e)', boxShadow: '0 10px 30px -8px rgba(245,134,52,0.6)' }}
               >
                 {slide.cta.label} <ArrowRight size={16} />
+                <RippleLayer ripples={ripples} color="rgba(255,255,255,0.5)" />
               </Link>
               <Link to="/contact" className="inline-flex items-center gap-1 text-sm font-medium text-white/90 hover:text-white">
                 Talk to us <ChevronRight size={14} />

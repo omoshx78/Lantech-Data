@@ -4,19 +4,22 @@ import { useState } from 'react'
 import { fmt } from '../lib/format'
 import { useCart } from '../context/CartContext'
 import ProductImage from './ProductImage'
+import { useRipple, RippleLayer } from './useRipple'
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
+  const { ripples, onRippleClick } = useRipple()
 
-  const handleAdd = () => {
+  const handleAdd = (e) => {
+    onRippleClick(e)
     addItem(product.id, 1)
     setAdded(true)
     setTimeout(() => setAdded(false), 1600)
   }
 
   return (
-    <div className="group rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-[#3E4095]/30 hover:shadow-xl hover:shadow-[#3E4095]/10 hover:-translate-y-1 transition-all duration-300">
+    <div className="group elevation-1 elevation-hover rounded-2xl border border-slate-200 bg-white overflow-hidden hover:border-[#3E4095]/30">
       <div className="overflow-hidden h-36">
         <ProductImage
           src={product.image}
@@ -38,13 +41,14 @@ export default function ProductCard({ product }) {
           <p className="font-extrabold text-lg text-slate-900">{fmt(product.price)}</p>
           <button
             onClick={handleAdd}
-            className={`inline-flex items-center gap-1.5 rounded-full text-sm font-semibold px-4 py-2 transition-all ${
+            className={`relative overflow-hidden inline-flex items-center gap-1.5 rounded-full text-sm font-semibold px-4 py-2 transition-all ${
               added ? 'bg-emerald-50 text-emerald-700' : 'text-white hover:shadow-lg hover:shadow-[#3E4095]/30'
             }`}
             style={added ? {} : { background: 'linear-gradient(135deg, #3E4095, #33356E)' }}
           >
             {added ? <Check size={14} /> : <Plus size={14} />}
             {added ? 'Added' : 'Add'}
+            <RippleLayer ripples={ripples} />
           </button>
         </div>
       </div>

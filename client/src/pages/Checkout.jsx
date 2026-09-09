@@ -4,6 +4,8 @@ import { Smartphone, Loader2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-re
 import { useCart } from '../context/CartContext'
 import { fmt } from '../lib/format'
 import { api } from '../lib/api'
+import { FloatingInput } from '../components/FloatingField'
+import { useRipple, RippleLayer } from '../components/useRipple'
 
 const PHONE_RE = /^(?:254|0)7\d{8}$|^(?:254|0)1\d{8}$/
 
@@ -81,8 +83,7 @@ export default function Checkout() {
     }
   }
 
-  const inputClass =
-    'mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#C7C8EC] focus:border-[#3E4095] disabled:bg-slate-50'
+  const { ripples, onRippleClick } = useRipple()
 
   if (stage === 'success') {
     return (
@@ -107,30 +108,26 @@ export default function Checkout() {
       <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Checkout</h1>
 
       <div className="grid md:grid-cols-[1.3fr_1fr] gap-10 mt-8">
-        <form onSubmit={onSubmit} className="grid gap-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-400 tracking-wide">FULL NAME</label>
-              <input required name="name" value={form.name} onChange={onChange} disabled={stage !== 'form'} className={inputClass} />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-400 tracking-wide">ORGANISATION</label>
-              <input name="organisation" value={form.organisation} onChange={onChange} disabled={stage !== 'form'} className={inputClass} />
-            </div>
+        <form onSubmit={onSubmit} className="grid gap-5">
+          <div className="grid sm:grid-cols-2 gap-5">
+            <FloatingInput label="Full name" required name="name" value={form.name} onChange={onChange} disabled={stage !== 'form'} />
+            <FloatingInput label="Organisation" name="organisation" value={form.organisation} onChange={onChange} disabled={stage !== 'form'} />
           </div>
+          <FloatingInput label="Email" required type="email" name="email" value={form.email} onChange={onChange} disabled={stage !== 'form'} />
           <div>
-            <label className="text-xs font-bold text-slate-400 tracking-wide">EMAIL</label>
-            <input required type="email" name="email" value={form.email} onChange={onChange} disabled={stage !== 'form'} className={inputClass} />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-slate-400 tracking-wide">M-PESA NUMBER</label>
-            <input required name="phone" value={form.phone} onChange={onChange} placeholder="07XX XXX XXX" disabled={stage !== 'form'} className={inputClass} />
+            <FloatingInput label="M-Pesa number" required name="phone" value={form.phone} onChange={onChange} disabled={stage !== 'form'} />
             <p className="text-xs text-slate-400 mt-1.5">Sandbox mode — use Safaricom test number 254708374149.</p>
           </div>
 
           {stage === 'form' && (
-            <button type="submit" className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-[#3E4095] hover:bg-[#33356E] text-white font-semibold px-6 py-3.5 w-fit transition-colors">
+            <button
+              type="submit"
+              onClick={onRippleClick}
+              className="relative overflow-hidden mt-2 inline-flex items-center justify-center gap-2 rounded-full text-white font-semibold px-6 py-3.5 w-fit transition-all hover:shadow-lg hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg, #3E4095, #33356E)' }}
+            >
               <Smartphone size={16} /> Pay with M-Pesa
+              <RippleLayer ripples={ripples} />
             </button>
           )}
 

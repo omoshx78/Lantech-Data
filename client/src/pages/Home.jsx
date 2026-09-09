@@ -6,6 +6,7 @@ import HeroSlider from '../components/HeroSlider'
 import Reveal from '../components/Reveal'
 import Counter from '../components/Counter'
 import FlipCard from '../components/FlipCard'
+import { useRipple, RippleLayer } from '../components/useRipple'
 
 const stats = [
   { icon: Users, value: 1200, suffix: '+', label: 'Students trained' },
@@ -30,6 +31,7 @@ const partners = [
 export default function Home() {
   const { products, loading } = useProducts()
   const featured = products.slice(0, 2)
+  const { ripples, onRippleClick } = useRipple()
 
   return (
     <>
@@ -179,10 +181,12 @@ export default function Home() {
                 </p>
                 <Link
                   to="/contact"
-                  className="mt-8 inline-flex items-center gap-2 rounded-full bg-white font-semibold px-7 py-3.5 hover:bg-blue-50 transition-colors shadow-lg"
+                  onClick={onRippleClick}
+                  className="relative overflow-hidden mt-8 inline-flex items-center gap-2 rounded-full bg-white font-semibold px-7 py-3.5 hover:bg-blue-50 transition-colors shadow-lg"
                   style={{ color: '#3E4095' }}
                 >
                   Talk to us <ArrowRight size={16} />
+                  <RippleLayer ripples={ripples} color="rgba(62,64,149,0.25)" />
                 </Link>
               </div>
             </div>

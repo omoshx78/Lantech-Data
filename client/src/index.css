@@ -14,3 +14,60 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   outline: 2px solid #1d4ed8;
   outline-offset: 2px;
 }
+
+/* Material Design ripple (MDB-style click feedback) */
+@keyframes mdb-ripple {
+  from { transform: scale(0); opacity: 1; }
+  to { transform: scale(1); opacity: 0; }
+}
+
+/* Material Design elevation scale (the same shadow system MDB is built on) */
+.elevation-1 { box-shadow: 0 2px 1px -1px rgba(0,0,0,0.2), 0 1px 1px 0 rgba(0,0,0,0.14), 0 1px 3px 0 rgba(0,0,0,0.12); }
+.elevation-2 { box-shadow: 0 3px 1px -2px rgba(0,0,0,0.2), 0 2px 2px 0 rgba(0,0,0,0.14), 0 1px 5px 0 rgba(0,0,0,0.12); }
+.elevation-3 { box-shadow: 0 3px 3px -2px rgba(0,0,0,0.2), 0 3px 4px 0 rgba(0,0,0,0.14), 0 1px 8px 0 rgba(0,0,0,0.12); }
+.elevation-4 { box-shadow: 0 2px 4px -1px rgba(0,0,0,0.2), 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12); }
+.elevation-5 { box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 5px 8px 0 rgba(0,0,0,0.14), 0 1px 14px 0 rgba(0,0,0,0.12); }
+.elevation-hover {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.elevation-hover:hover {
+  box-shadow: 0 5px 5px -3px rgba(0,0,0,0.2), 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+/* MDB-style floating label form fields */
+.mdb-field { position: relative; }
+.mdb-field input,
+.mdb-field textarea {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #cbd5e1;
+  background: transparent;
+  padding: 1.25rem 0 0.5rem 0;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.mdb-field input:focus,
+.mdb-field textarea:focus {
+  border-bottom: 2px solid #3E4095;
+  margin-bottom: -1px;
+}
+.mdb-field label {
+  position: absolute;
+  left: 0;
+  top: 1.25rem;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+.mdb-field input:focus ~ label,
+.mdb-field input:not(:placeholder-shown) ~ label,
+.mdb-field textarea:focus ~ label,
+.mdb-field textarea:not(:placeholder-shown) ~ label {
+  top: -0.1rem;
+  font-size: 0.72rem;
+  color: #3E4095;
+  font-weight: 600;
+}
